@@ -13,7 +13,7 @@
         <!-- Card panel -->
         <div class="card" id="cardPanel">
             
-            <!-- View 1: Verification Form -->
+            <!-- Verification Form -->
             <div id="verifyView">
                 <h2>Enter Code</h2>
                 <p class="subtitle">Please enter the security code to proceed.</p>
@@ -32,16 +32,6 @@
                     <button type="submit" id="submitBtn">Verify</button>
                 </form>
                 <p id="errorMsg" class="error-message"></p>
-            </div>
-
-            <!-- View 2: Congratulations Page (shown on success) -->
-            <div id="congratsView" class="hidden">
-                <div class="success-icon">🎉</div>
-                <h2>Success!</h2>
-                <p class="congrats-text">Congratulations, the code is correct!</p>
-                <div class="decoration-dots">
-                    <span></span><span></span><span></span>
-                </div>
             </div>
 
         </div>
@@ -66,10 +56,6 @@
         const input = document.getElementById('codeInput');
         const submitBtn = document.getElementById('submitBtn');
         const errorMsg = document.getElementById('errorMsg');
-        
-        const verifyView = document.getElementById('verifyView');
-        const congratsView = document.getElementById('congratsView');
-        const cardPanel = document.getElementById('cardPanel');
 
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -84,10 +70,8 @@
             const hashedInput = await sha256(val);
 
             if (hashedInput === expectedHash) {
-                // Show congratulations page
-                verifyView.classList.add('hidden');
-                congratsView.classList.remove('hidden');
-                cardPanel.classList.add('success-state');
+                // Redirect to congratulations page
+                window.location.href = 'congrats.html';
             } else {
                 errorMsg.textContent = 'Incorrect code. Please try again.';
                 submitBtn.disabled = false;
