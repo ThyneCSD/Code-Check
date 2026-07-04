@@ -4,108 +4,60 @@
     <meta charset="UTF-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Verification Portal — Secure Access</title>
-    <meta name="description" content="Official secure code verification portal. Enter your authorization code to verify access." />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+    <title>Gateway Verification</title>
+    <meta name="description" content="Secure Gateway Code Verification." />
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="index.css" />
 </head>
 <body>
-    <!-- Animated background particles -->
-    <div class="bg-grid" aria-hidden="true"></div>
-    <div class="bg-glow bg-glow--1" aria-hidden="true"></div>
-    <div class="bg-glow bg-glow--2" aria-hidden="true"></div>
-
-    <main class="page">
-        <!-- Header bar -->
-        <header class="topbar">
-            <div class="topbar__brand">
-                <div class="topbar__icon">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <main class="page-wrapper">
+        <section class="portal-container">
+            <div class="portal-header">
+                <div class="portal-logo" aria-hidden="true">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
                         <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
                     </svg>
                 </div>
-                <span class="topbar__title">SecureGate</span>
-            </div>
-            <div class="topbar__status">
-                <span class="status-dot"></span>
-                <span class="status-text">System Online</span>
-            </div>
-        </header>
-
-        <!-- Main verification card -->
-        <section class="verify-card">
-            <div class="verify-card__header">
-                <div class="shield-icon">
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="url(#shieldGrad)" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
-                        <defs>
-                            <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                                <stop offset="0%" stop-color="#60a5fa"/>
-                                <stop offset="100%" stop-color="#a78bfa"/>
-                            </linearGradient>
-                        </defs>
-                        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-                    </svg>
-                </div>
-                <h1 class="verify-card__title">Access Verification</h1>
-                <p class="verify-card__subtitle">Enter your authorized access code to proceed</p>
+                <h1>System Verification</h1>
+                <p>Please enter your credentials to verify authorization status.</p>
             </div>
 
-            <form id="verifyForm" class="verify-card__form" autocomplete="off">
-                <div class="input-group">
-                    <label for="codeInput" class="input-label">Authorization Code</label>
-                    <div class="input-wrapper">
-                        <svg class="input-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
-                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                        </svg>
-                        <input
-                            type="password"
-                            id="codeInput"
-                            placeholder="Enter code"
-                            autocomplete="off"
-                            spellcheck="false"
-                            required
-                        />
-                        <button type="button" id="toggleVisibility" class="toggle-vis" aria-label="Toggle code visibility">
-                            <svg id="eyeIcon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
-                                <circle cx="12" cy="12" r="3"/>
-                            </svg>
-                        </button>
-                    </div>
+            <form id="verificationForm" autocomplete="off">
+                <div class="form-control">
+                    <label for="codeInput">Security Code</label>
+                    <input
+                        type="password"
+                        id="codeInput"
+                        placeholder="••••••••"
+                        autocomplete="off"
+                        spellcheck="false"
+                        required
+                    />
                 </div>
 
-                <button type="submit" id="checkBtn" class="btn-verify">
-                    <span class="btn-verify__text">Verify Code</span>
-                    <span class="btn-verify__loader" hidden>
-                        <span class="spinner"></span>
-                        Verifying…
-                    </span>
+                <button type="submit" id="submitBtn">
+                    <span class="btn-text">Verify Access</span>
+                    <span class="btn-loader" hidden>Verifying...</span>
                 </button>
             </form>
 
-            <!-- Result display -->
-            <div id="resultBox" class="result-box" hidden>
-                <div class="result-box__icon" id="resultIcon"></div>
-                <p class="result-box__title" id="resultTitle"></p>
-                <p class="result-box__message" id="resultMessage"></p>
+            <div id="statusAlert" class="alert-box" hidden>
+                <div class="alert-icon" id="alertIcon"></div>
+                <div class="alert-content">
+                    <h2 id="alertTitle"></h2>
+                    <p id="alertMessage"></p>
+                </div>
             </div>
 
-            <div class="verify-card__footer">
-                <p>This is a secured verification endpoint. Unauthorized access attempts are logged.</p>
+            <div class="portal-footer">
+                <p>Protected System. Access restricted to authorized personnel only.</p>
             </div>
         </section>
-
-        <!-- Footer -->
-        <footer class="page-footer">
-            <p>&copy; 2026 SecureGate Systems &middot; All rights reserved</p>
-        </footer>
     </main>
 
     <script>
-        // --- Hash the expected code so it never appears in source ---
-        // SHA-256 hash of "MOS49"
+        // SHA-256 implementation
         async function sha256(message) {
             const encoder = new TextEncoder();
             const data = encoder.encode(message);
@@ -114,91 +66,61 @@
             return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
         }
 
-        // Pre-computed SHA-256 of the correct code
-        const EXPECTED_HASH = null; // will be set on load
-
         let expectedHash = '';
         (async () => {
-            // Compute hash of the correct code at build time equivalent
-            // The actual code "MOS49" is hashed — only the hash is compared
             expectedHash = await sha256('MOS49');
         })();
 
-        const form = document.getElementById('verifyForm');
+        const form = document.getElementById('verificationForm');
         const input = document.getElementById('codeInput');
-        const btn = document.getElementById('checkBtn');
-        const btnText = btn.querySelector('.btn-verify__text');
-        const btnLoader = btn.querySelector('.btn-verify__loader');
-        const resultBox = document.getElementById('resultBox');
-        const resultIcon = document.getElementById('resultIcon');
-        const resultTitle = document.getElementById('resultTitle');
-        const resultMessage = document.getElementById('resultMessage');
-        const toggleBtn = document.getElementById('toggleVisibility');
+        const btn = document.getElementById('submitBtn');
+        const btnText = btn.querySelector('.btn-text');
+        const btnLoader = btn.querySelector('.btn-loader');
+        const alertBox = document.getElementById('statusAlert');
+        const alertIcon = document.getElementById('alertIcon');
+        const alertTitle = document.getElementById('alertTitle');
+        const alertMessage = document.getElementById('alertMessage');
 
-        // Toggle password visibility
-        toggleBtn.addEventListener('click', () => {
-            const isPassword = input.type === 'password';
-            input.type = isPassword ? 'text' : 'password';
-            toggleBtn.setAttribute('aria-label', isPassword ? 'Hide code' : 'Show code');
-        });
-
-        // Handle form submit
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
-            const val = input.value.trim();
+            const value = input.value.trim();
 
-            if (!val) {
-                showResult('warning', 'No Code Entered', 'Please enter your authorization code to continue.');
-                return;
-            }
+            if (!value) return;
 
-            // Show loading state
             btnText.hidden = true;
             btnLoader.hidden = false;
             btn.disabled = true;
-            resultBox.hidden = true;
+            alertBox.hidden = true;
 
-            // Simulate server verification delay for realism
-            await new Promise(r => setTimeout(r, 800 + Math.random() * 700));
+            // Short authentic checking delay
+            await new Promise(r => setTimeout(r, 600));
 
-            const inputHash = await sha256(val);
+            const hashedInput = await sha256(value);
 
-            if (inputHash === expectedHash) {
-                showResult('success', 'Access Verified', 'Authorization code confirmed. Access granted.');
+            if (hashedInput === expectedHash) {
+                showAlert('success', 'Access Authorized', 'The verification code matches our registry.');
             } else {
-                showResult('error', 'Verification Failed', 'The code you entered is invalid. Please check and try again.');
+                showAlert('error', 'Authentication Failed', 'The code entered is invalid or has expired.');
             }
 
-            // Reset button
             btnText.hidden = false;
             btnLoader.hidden = true;
             btn.disabled = false;
         });
 
-        function showResult(type, title, message) {
-            resultBox.hidden = false;
-            resultBox.className = 'result-box result-box--' + type;
+        function showAlert(type, title, message) {
+            alertBox.hidden = false;
+            alertBox.className = 'alert-box alert-' + type;
 
             const icons = {
-                success: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
-                error: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>',
-                warning: '<svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>'
+                success: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>',
+                error: '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>'
             };
 
-            resultIcon.innerHTML = icons[type] || '';
-            resultTitle.textContent = title;
-            resultMessage.textContent = message;
-
-            // Animate in
-            resultBox.style.animation = 'none';
-            resultBox.offsetHeight; // reflow
-            resultBox.style.animation = 'fadeSlideUp 0.4s ease forwards';
+            alertIcon.innerHTML = icons[type] || '';
+            alertTitle.textContent = title;
+            alertMessage.textContent = message;
         }
-
-        // Enter key submits
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') form.requestSubmit();
-        });
     </script>
 </body>
 </html>
