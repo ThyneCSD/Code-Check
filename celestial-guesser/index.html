@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Celestial Identifier — Solar System Reconnaissance</title>
+  <meta name="description" content="A serious astronomical guessing game. Select a set of celestial bodies, interrogate the unknown object with scientific questions, and identify it." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #04060d;
+      --surface: #0a0f1e;
+      --surface2: #111828;
+      --surface3: #1a2438;
+      --border: rgba(100, 160, 255, 0.12);
+      --border-bright: rgba(100, 160, 255, 0.35);
+      --accent: #4a8fff;
+      --accent2: #7b5fff;
+      --accent3: #ff9f43;
+      --accent-glow: rgba(74, 143, 255, 0.25);
+      --text: #e2e8f8;
+      --text-dim: #8896b3;
+      --text-muted: #4a5568;
+      --success: #36d399;
+      --danger: #f87171;
+      --warn: #fbbf24;
+      --radius: 12px;
+      --radius-lg: 20px;
+    }
+
+    html { font-size: 16px; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* ─── Starfield ─── */
+    #starfield {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    /* ─── Nebula glow ─── */
+    .nebula {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.08;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .nebula-1 { width: 600px; height: 600px; background: var(--accent2); top: -200px; left: -200px; }
+    .nebula-2 { width: 500px; height: 500px; background: var(--accent); bottom: -150px; right: -150px; }
+    .nebula-3 { width: 400px; height: 400px; background: var(--accent3); top: 40%; left: 50%; transform: translate(-50%, -50%); opacity: 0.05; }
+
+    /* ─── Layout ─── */
+    #app {
+      position: relative;
+      z-index: 1;
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ─── Header ─── */
+    header {
+      text-align: center;
+      padding: 3rem 0 2.5rem;
+    }
+    .header-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.3em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 1rem;
+      opacity: 0.8;
+    }
+    header h1 {
+      font-size: clamp(1.8rem, 4vw, 2.8rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      line-height: 1.15;
+      background: linear-gradient(135deg, #c8d8ff 0%, #8ab3ff 50%, #a78bfa 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 1rem;
+    }
+    header p {
+      font-size: 0.95rem;
+      color: var(--text-dim);
+      max-width: 520px;
+      margin: 0 auto;
+      line-height: 1.7;
+    }
+
+    /* ─── Panel ─── */
+    .panel {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 2rem;
+      margin-bottom: 1.5rem;
+      backdrop-filter: blur(8px);
+    }
+    .panel-title {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 0.25em;
+      color: var(--accent);
+      text-transform: uppercase;
+      margin-bottom: 1.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+    .panel-title::before {
+      content: '';
+      display: inline-block;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+    }
+
+    /* ─── Setup Screen ─── */
+    #setup-screen { display: block; }
+    #game-screen   { display: none; }
+
+    /* ─── Count Selector ─── */
+    .count-selector {
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+      margin-bottom: 2rem;
+    }
+    .count-label {
+      font-size: 0.9rem;
+      color: var(--text-dim);
+      white-space: nowrap;
+    }
+    .count-pills {
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+    }
+    .count-pill {
+      padding: 0.35rem 0.85rem;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      font-family: 'Space Mono', monospace;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .count-pill:hover { border-color: var(--accent); color: var(--text); }
+    .count-pill.active {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      border-color: transparent;
+      color: #fff;
+      box-shadow: 0 0 16px var(--accent-glow);
+    }
+
+    /* ─── Body Grid ─── */
+    .category-label {
+      font-size: 0.72rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      font-family: 'Space Mono', monospace;
+      margin: 1.25rem 0 0.6rem;
+    }
+    .body-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(145px, 1fr));
+      gap: 0.5rem;
+      margin-bottom: 0.25rem;
+    }
+    .body-chip {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.85rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      cursor: pointer;
+      font-size: 0.82rem;
+      color: var(--text-dim);
+      transition: all 0.18s;
+      user-select: none;
+    }
+    .body-chip:hover { border-color: var(--border-bright); color: var(--text); }
+    .body-chip.selected {
+      border-color: var(--accent);
+      background: rgba(74, 143, 255, 0.08);
+      color: var(--text);
+    }
+    .body-chip .body-icon { font-size: 1rem; line-height: 1; }
+    .body-chip .body-name { font-size: 0.82rem; }
+    .body-chip .check {
+      margin-left: auto;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 1.5px solid var(--border-bright);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.55rem;
+      color: transparent;
+      transition: all 0.18s;
+      flex-shrink: 0;
+    }
+    .body-chip.selected .check {
+      background: var(--accent);
+      border-color: var(--accent);
+      color: #fff;
+      box-shadow: 0 0 8px var(--accent-glow);
+    }
+
+    .selection-count {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      margin-top: 1rem;
+    }
+    .selection-count span {
+      color: var(--accent);
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* ─── Buttons ─── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.75rem;
+      border-radius: var(--radius);
+      border: none;
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.9rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      letter-spacing: 0.01em;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      color: #fff;
+      box-shadow: 0 4px 20px rgba(74, 143, 255, 0.3);
+    }
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 28px rgba(74, 143, 255, 0.45);
+    }
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    .btn-secondary {
+      background: var(--surface2);
+      color: var(--text-dim);
+      border: 1px solid var(--border);
+    }
+    .btn-secondary:hover { border-color: var(--border-bright); color: var(--text); }
+    .btn-danger {
+      background: rgba(248, 113, 113, 0.1);
+      color: var(--danger);
+      border: 1px solid rgba(248, 113, 113, 0.25);
+    }
+    .btn-danger:hover { background: rgba(248, 113, 113, 0.18); }
+    .btn-success {
+      background: rgba(54, 211, 153, 0.1);
+      color: var(--success);
+      border: 1px solid rgba(54, 211, 153, 0.25);
+    }
+    .btn-success:hover { background: rgba(54, 211, 153, 0.18); }
+    .btn-sm { padding: 0.45rem 1rem; font-size: 0.8rem; }
+
+    /* ─── Game Screen ─── */
+    .game-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 1.5rem;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+    .game-meta { display: flex; flex-direction: column; gap: 0.3rem; }
+    .game-meta-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      letter-spacing: 0.2em;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .game-meta-value { font-size: 1rem; font-weight: 600; color: var(--text); }
+
+    .question-budget {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .budget-bar {
+      display: flex;
+      gap: 3px;
+    }
+    .budget-pip {
+      width: 10px;
+      height: 10px;
+      border-radius: 2px;
+      background: var(--accent);
+      opacity: 0.9;
+      transition: all 0.3s;
+    }
+    .budget-pip.used { background: var(--surface3); opacity: 0.5; }
+    .budget-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      margin-left: 0.25rem;
+    }
+
+    /* ─── Candidates ─── */
+    .candidates-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      margin-bottom: 1.5rem;
+    }
+    .candidate-badge {
+      padding: 0.3rem 0.75rem;
+      border-radius: 999px;
+      font-size: 0.75rem;
+      font-family: 'Space Mono', monospace;
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-dim);
+      display: flex;
+      align-items: center;
+      gap: 0.35rem;
+      transition: all 0.3s;
+    }
+    .candidate-badge.eliminated {
+      opacity: 0.3;
+      text-decoration: line-through;
+    }
+
+    /* ─── Q&A Log ─── */
+    .qa-log {
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+      max-height: 340px;
+      overflow-y: auto;
+      padding-right: 0.25rem;
+      margin-bottom: 1.25rem;
+    }
+    .qa-log::-webkit-scrollbar { width: 4px; }
+    .qa-log::-webkit-scrollbar-track { background: transparent; }
+    .qa-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    .qa-entry {
+      display: flex;
+      flex-direction: column;
+      gap: 0.4rem;
+      animation: fadeSlide 0.3s ease;
+    }
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .qa-question {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: baseline;
+      gap: 0.5rem;
+    }
+    .qa-q-num {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.65rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+    }
+    .qa-answer {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.4rem 0.9rem;
+      border-radius: var(--radius);
+      font-size: 0.85rem;
+      font-weight: 600;
+      width: fit-content;
+    }
+    .qa-answer.yes  { background: rgba(54, 211, 153, 0.1); color: var(--success); border: 1px solid rgba(54,211,153,0.25); }
+    .qa-answer.no   { background: rgba(248, 113, 113, 0.08); color: var(--danger); border: 1px solid rgba(248,113,113,0.2); }
+    .qa-answer.sometimes { background: rgba(251, 191, 36, 0.08); color: var(--warn); border: 1px solid rgba(251,191,36,0.2); }
+
+    .qa-empty {
+      text-align: center;
+      padding: 2rem 0;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      font-style: italic;
+    }
+
+    /* ─── Questions Panel ─── */
+    .questions-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+    }
+    @media (max-width: 580px) { .questions-grid { grid-template-columns: 1fr; } }
+
+    .q-btn {
+      padding: 0.65rem 1rem;
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      background: var(--surface2);
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.18s;
+      line-height: 1.4;
+    }
+    .q-btn:hover:not(:disabled) {
+      border-color: var(--accent);
+      color: var(--text);
+      background: rgba(74, 143, 255, 0.06);
+    }
+    .q-btn:disabled {
+      opacity: 0.3;
+      cursor: not-allowed;
+    }
+    .q-btn.asked {
+      opacity: 0.3;
+      text-decoration: line-through;
+      cursor: not-allowed;
+    }
+
+    /* ─── Guess Section ─── */
+    .guess-section {
+      display: flex;
+      gap: 0.75rem;
+      align-items: stretch;
+      flex-wrap: wrap;
+    }
+    .guess-select {
+      flex: 1;
+      min-width: 180px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 0.9rem;
+      padding: 0.7rem 1rem;
+      appearance: none;
+      cursor: pointer;
+      outline: none;
+      transition: border-color 0.2s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='%238896b3'%3E%3Cpath fill-rule='evenodd' d='M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z' clip-rule='evenodd'/%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 0.75rem center;
+      background-size: 16px;
+      padding-right: 2.5rem;
+    }
+    .guess-select:focus { border-color: var(--accent); }
+    .guess-select option { background: var(--surface); }
+
+    /* ─── Result ─── */
+    .result-panel {
+      text-align: center;
+      padding: 2.5rem 2rem;
+    }
+    .result-icon { font-size: 4rem; line-height: 1; margin-bottom: 1rem; }
+    .result-title {
+      font-size: 1.6rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+    }
+    .result-title.correct { color: var(--success); }
+    .result-title.wrong   { color: var(--danger); }
+    .result-body { color: var(--text-dim); font-size: 0.9rem; line-height: 1.7; max-width: 480px; margin: 0 auto 1.5rem; }
+    .result-reveal {
+      display: inline-block;
+      font-family: 'Space Mono', monospace;
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--accent3);
+      background: rgba(255, 159, 67, 0.1);
+      border: 1px solid rgba(255, 159, 67, 0.25);
+      border-radius: var(--radius);
+      padding: 0.5rem 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+    .result-fact {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      font-style: italic;
+      border-left: 3px solid var(--accent2);
+      padding-left: 0.9rem;
+      text-align: left;
+      max-width: 500px;
+      margin: 0 auto 2rem;
+      line-height: 1.6;
+    }
+    .result-actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+
+    /* ─── Divider ─── */
+    .divider {
+      border: none;
+      border-top: 1px solid var(--border);
+      margin: 1.25rem 0;
+    }
+
+    /* ─── Scanning animation ─── */
+    .scanning-text {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--accent);
+      animation: blink 1.2s steps(2) infinite;
+    }
+    @keyframes blink { 50% { opacity: 0; } }
+
+    /* ─── Scrollbar for body grid container ─── */
+    .body-list-container {
+      max-height: 340px;
+      overflow-y: auto;
+      padding-right: 4px;
+    }
+    .body-list-container::-webkit-scrollbar { width: 4px; }
+    .body-list-container::-webkit-scrollbar-track { background: transparent; }
+    .body-list-container::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+    /* ─── Footer ─── */
+    footer {
+      text-align: center;
+      padding: 2rem 0 0;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      font-family: 'Space Mono', monospace;
+    }
+
+    /* ─── Responsive ─── */
+    @media (max-width: 600px) {
+      .panel { padding: 1.25rem; }
+      .game-header { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div class="nebula nebula-1"></div>
+<div class="nebula nebula-2"></div>
+<div class="nebula nebula-3"></div>
+
+<div id="app">
+  <header>
+    <div class="header-label">Solar System Reconnaissance</div>
+    <h1>Celestial Identifier</h1>
+    <p>An unknown object has been detected in the solar system. Formulate your questions carefully — you have limited transmissions to identify it.</p>
+  </header>
+
+  <!-- ══════════════ SETUP SCREEN ══════════════ -->
+  <div id="setup-screen">
+    <div class="panel">
+      <div class="panel-title">Mission Parameters</div>
+
+      <div class="count-selector">
+        <span class="count-label">Body pool size</span>
+        <div class="count-pills">
+          <button class="count-pill" onclick="setCount(3)" id="pill-3">3</button>
+          <button class="count-pill active" onclick="setCount(5)" id="pill-5">5</button>
+          <button class="count-pill" onclick="setCount(8)" id="pill-8">8</button>
+          <button class="count-pill" onclick="setCount(12)" id="pill-12">12</button>
+          <button class="count-pill" onclick="setCount(20)" id="pill-20">20</button>
+          <button class="count-pill" onclick="setCount('all')" id="pill-all">All</button>
+        </div>
+      </div>
+
+      <div class="body-list-container">
+        <div class="category-label">Planets</div>
+        <div class="body-grid" id="grid-planets"></div>
+
+        <div class="category-label">Dwarf Planets</div>
+        <div class="body-grid" id="grid-dwarfs"></div>
+
+        <div class="category-label">Moons</div>
+        <div class="body-grid" id="grid-moons"></div>
+
+        <div class="category-label">Other</div>
+        <div class="body-grid" id="grid-other"></div>
+      </div>
+
+      <div class="selection-count" id="sel-count">Selected: <span>0</span> bodies</div>
+    </div>
+
+    <div style="display:flex; gap:0.75rem; justify-content:flex-end; align-items:center; flex-wrap:wrap;">
+      <span id="setup-warning" style="font-size:0.82rem; color:var(--danger); display:none;">Select at least 2 bodies to begin.</span>
+      <button class="btn btn-primary" id="start-btn" onclick="startGame()" disabled>
+        Begin Reconnaissance
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══════════════ GAME SCREEN ══════════════ -->
+  <div id="game-screen">
+    <div class="panel" id="result-panel-container" style="display:none;"></div>
+
+    <div id="active-game">
+      <div class="panel">
+        <div class="game-header">
+          <div class="game-meta">
+            <div class="game-meta-label">Mission</div>
+            <div class="game-meta-value">Unknown Celestial Object</div>
+          </div>
+          <div>
+            <div class="game-meta-label" style="margin-bottom:0.5rem;">Questions Remaining</div>
+            <div class="question-budget">
+              <div class="budget-bar" id="budget-bar"></div>
+              <span class="budget-label" id="budget-label"></span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="divider" />
+
+        <div class="panel-title" style="margin-bottom:0.75rem;">Active Candidates</div>
+        <div class="candidates-row" id="candidates-row"></div>
+
+        <hr class="divider" />
+
+        <div class="panel-title">Transmission Log</div>
+        <div class="qa-log" id="qa-log">
+          <div class="qa-empty" id="qa-empty">No transmissions yet. Ask your first question below.</div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Query Bank</div>
+        <div class="questions-grid" id="questions-grid"></div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-title">Submit Identification</div>
+        <p style="font-size:0.85rem; color:var(--text-dim); margin-bottom:1rem;">When you are confident, lock in your identification. One attempt only.</p>
+        <div class="guess-section">
+          <select class="guess-select" id="guess-select">
+            <option value="">— Select celestial body —</option>
+          </select>
+          <button class="btn btn-primary" id="guess-btn" onclick="submitGuess()">
+            Lock In Identification
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Celestial Identifier v1.0 &nbsp;·&nbsp; Solar System Reconnaissance &nbsp;·&nbsp; Data sourced from astronomical records
+  </footer>
+</div>
+
+<script>
+// ─────────────────────────────────────────────────────────────────────────────
+//  DATA
+// ─────────────────────────────────────────────────────────────────────────────
+const BODIES = [
+  // Planets
+  { id:'mercury', name:'Mercury', icon:'☿', category:'planets', type:'planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: true,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: true, retrograde_rotation: false, warmer_than_earth: true,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: true, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: false,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Mercury\'s surface temperature swings more than 600°C between day and night due to its negligible atmosphere.'
+  },
+  { id:'venus', name:'Venus', icon:'♀', category:'planets', type:'planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: true, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: true,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: true, warmer_than_earth: true,
+      has_ice: false, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: true, is_moon: false, has_storms: true,
+      rotation_longer_than_year: true, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: false,
+      been_landed_on: true, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Venus rotates so slowly that one Venusian day lasts longer than a full Venusian year, and it spins in retrograde.'
+  },
+  { id:'earth', name:'Earth', icon:'⊕', category:'planets', type:'planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: true, has_rings: false, larger_than_earth: true,
+      is_gas_giant: false, has_liquid_water: true, inner_solar_system: true,
+      has_moons: true, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: true, retrograde_rotation: false, warmer_than_earth: true,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: true,
+      has_volcanic_activity: true, is_moon: false, has_storms: true,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: false,
+      been_landed_on: true, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Earth is the only known body in the universe confirmed to harbour life, with liquid water covering ~71% of its surface.'
+  },
+  { id:'mars', name:'Mars', icon:'♂', category:'planets', type:'planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: true, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: true, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: true,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: false,
+      been_landed_on: true, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Mars hosts Olympus Mons, the tallest volcano in the solar system at ~22 km, nearly three times the height of Everest.'
+  },
+  { id:'jupiter', name:'Jupiter', icon:'♃', category:'planets', type:'planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: true, has_rings: true, larger_than_earth: true,
+      is_gas_giant: true, has_liquid_water: false, inner_solar_system: false,
+      has_moons: true, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: true, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: false, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: true,
+      rotation_longer_than_year: false, rocky: false,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: false,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Jupiter\'s Great Red Spot is a storm system that has persisted for at least 350 years and is larger than the entire Earth.'
+  },
+  { id:'saturn', name:'Saturn', icon:'♄', category:'planets', type:'planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: true, has_rings: true, larger_than_earth: true,
+      is_gas_giant: true, has_liquid_water: false, inner_solar_system: false,
+      has_moons: true, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: true, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: true,
+      rotation_longer_than_year: false, rocky: false,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: false,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Saturn\'s rings are made primarily of ice particles and span up to 282,000 km in diameter yet are only ~10 metres thick in places.'
+  },
+  { id:'uranus', name:'Uranus', icon:'⛢', category:'planets', type:'planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: true, has_rings: true, larger_than_earth: true,
+      is_gas_giant: true, has_liquid_water: false, inner_solar_system: false,
+      has_moons: true, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: true, retrograde_rotation: true, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: false,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: false,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Uranus rotates on its side with an axial tilt of 97.8°, causing each pole to experience ~42 years of continuous sunlight followed by darkness.'
+  },
+  { id:'neptune', name:'Neptune', icon:'♆', category:'planets', type:'planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: true, has_rings: true, larger_than_earth: true,
+      is_gas_giant: true, has_liquid_water: false, inner_solar_system: false,
+      has_moons: true, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: true, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: true,
+      rotation_longer_than_year: false, rocky: false,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: false,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Neptune has the fastest sustained winds in the solar system, exceeding 2,100 km/h — nearly supersonic in Earth\'s atmosphere.'
+  },
+
+  // Dwarf Planets
+  { id:'pluto', name:'Pluto', icon:'♇', category:'dwarfs', type:'dwarf planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: true, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: true, is_dwarf_planet: true, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: true, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: true
+    },
+    fact: 'Pluto was reclassified as a dwarf planet in 2006. New Horizons revealed a heart-shaped nitrogen ice plain called Tombaugh Regio in 2015.'
+  },
+  { id:'eris', name:'Eris', icon:'⚸', category:'dwarfs', type:'dwarf planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: true, is_dwarf_planet: true, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: false, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Eris is so massive it was initially dubbed the "tenth planet", ultimately triggering Pluto\'s reclassification and the dwarf planet category.'
+  },
+  { id:'ceres', name:'Ceres', icon:'⚳', category:'dwarfs', type:'dwarf planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: true, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: true, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: true, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: true, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Ceres is the only dwarf planet in the inner solar system and accounts for about one-third of the total mass of the asteroid belt.'
+  },
+  { id:'makemake', name:'Makemake', icon:'🌑', category:'dwarfs', type:'dwarf planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: true, is_dwarf_planet: true, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: false, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: true, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Makemake is covered in frozen methane and ethane and has no known atmosphere, making it one of the coldest known surfaces in the solar system.'
+  },
+  { id:'haumea', name:'Haumea', icon:'🥚', category:'dwarfs', type:'dwarf planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: true, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: true, is_dwarf_planet: true, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: false, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: true, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Haumea rotates so rapidly (once every 3.9 hours) that centrifugal forces have distorted it into a prolate spheroid resembling a rugby ball.'
+  },
+  { id:'sedna', name:'Sedna', icon:'🔴', category:'dwarfs', type:'dwarf planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: true, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: false, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Sedna resides in the inner Oort Cloud and takes ~11,400 years to complete one orbit. At its aphelion it is the most distant known object in the solar system.'
+  },
+  { id:'quaoar', name:'Quaoar', icon:'💜', category:'dwarfs', type:'dwarf planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: true, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: true, is_dwarf_planet: true, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: false, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: true, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'In 2022, astronomers discovered Quaoar has a ring system — unusually far from its body, defying Roche limit predictions that such rings should coalesce into a moon.'
+  },
+  { id:'gonggong', name:'Gonggong', icon:'🔶', category:'dwarfs', type:'dwarf planet',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: true, is_dwarf_planet: true, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: true, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: false, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Gonggong is a deep-red Scattered Disc Object whose surface is coloured by tholins — complex organic compounds formed by radiation bombarding methane ice.'
+  },
+
+  // Moons
+  { id:'luna', name:'The Moon', icon:'☽', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: true,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: false,
+      been_landed_on: true, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'The Moon is the fifth-largest satellite in the solar system and the only extraterrestrial body humans have set foot on, between 1969–1972.'
+  },
+  { id:'titan', name:'Titan', icon:'🟠', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: true, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: true,
+      rotation_longer_than_year: false, rocky: false,
+      in_kuiper_belt: false, has_subsurface_ocean: true, smaller_than_moon: false,
+      been_landed_on: true, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Titan is the only moon with a dense atmosphere and the only body besides Earth with stable liquid on its surface — rivers and lakes of liquid methane.'
+  },
+  { id:'europa', name:'Europa', icon:'🔵', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: true, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: true, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Europa harbours a global subsurface liquid water ocean beneath its icy crust, making it one of the most promising candidates for extraterrestrial life.'
+  },
+  { id:'ganymede', name:'Ganymede', icon:'🟤', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: true, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: true, smaller_than_moon: false,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Ganymede is the largest moon in the solar system — larger than Mercury — and the only moon known to have its own magnetic field.'
+  },
+  { id:'io', name:'Io', icon:'🟡', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: false, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: true, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: false,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Io is the most volcanically active body in the solar system, with hundreds of active volcanoes driven by tidal heating from Jupiter\'s immense gravity.'
+  },
+  { id:'callisto', name:'Callisto', icon:'⬛', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: true, smaller_than_moon: false,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Callisto is the most heavily cratered object in the solar system and has a subsurface ocean, yet shows no signs of tectonic or volcanic activity.'
+  },
+  { id:'enceladus', name:'Enceladus', icon:'❄️', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: true, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: true, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: true, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Enceladus actively vents geysers of water vapour and ice from its south pole, feeding Saturn\'s E ring and revealing a subsurface liquid ocean.'
+  },
+  { id:'triton', name:'Triton', icon:'🔷', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: true, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: true, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: true, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Triton orbits Neptune in retrograde, strongly suggesting it is a captured Kuiper Belt Object. It will eventually be torn apart by tidal forces in ~3.6 billion years.'
+  },
+  { id:'rhea', name:'Rhea', icon:'🩶', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: false,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Rhea is Saturn\'s second-largest moon and has the lowest density of any moon in the solar system, suggesting it is almost entirely water ice with a small rocky core.'
+  },
+  { id:'iapetus', name:'Iapetus', icon:'⬜', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Iapetus has a stark two-toned appearance: one hemisphere is as bright as snow and the other as dark as coal, a mystery first noted by Cassini in 1671.'
+  },
+  { id:'mimas', name:'Mimas', icon:'💿', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: false,
+      in_kuiper_belt: false, has_subsurface_ocean: true, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Mimas\'s giant Herschel crater makes it resemble the Death Star. In 2023, evidence emerged of a subsurface liquid water ocean hidden beneath its ancient icy surface.'
+  },
+  { id:'miranda', name:'Miranda', icon:'🌙', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: true, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: false,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Miranda is the smallest and innermost of Uranus\'s major moons. Its bizarre terrain — canyons 12× deeper than the Grand Canyon — may record a past catastrophic collision.'
+  },
+  { id:'oberon', name:'Oberon', icon:'🌑', category:'moons', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: true, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: false,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Oberon is Uranus\'s outermost major moon, named after the king of fairies in Shakespeare\'s A Midsummer Night\'s Dream. Its surface is ancient and heavily cratered.'
+  },
+
+  // Other
+  { id:'phobos', name:'Phobos', icon:'🟫', category:'other', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: true,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: false, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Phobos orbits Mars faster than Mars rotates, completing three full orbits per Martian day. It is spiralling inward and will either crash or fragment within ~50 million years.'
+  },
+  { id:'charon', name:'Charon', icon:'🌘', category:'other', type:'moon',
+    facts:{
+      orbits_sun: false, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: true,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: true, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: true,
+      is_comet: false, binary_system: true
+    },
+    fact: 'Charon is so large relative to Pluto that the two are often considered a binary system — their shared centre of mass lies outside Pluto itself.'
+  },
+  { id:'vesta', name:'Vesta', icon:'⬡', category:'other', type:'asteroid',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: false, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: true, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Vesta is the second-largest body in the asteroid belt. NASA\'s Dawn spacecraft confirmed it has a differentiated interior — a metal core, mantle, and crust — like a terrestrial planet.'
+  },
+  { id:'pallas', name:'Pallas', icon:'🔷', category:'other', type:'asteroid',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: false,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: false, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: true, primarily_ice: false,
+      is_comet: false, binary_system: false
+    },
+    fact: 'Pallas has one of the most highly inclined orbits of any large asteroid, tilted ~34° to the ecliptic, giving it a chaotic, tumbling trajectory through the asteroid belt.'
+  },
+  { id:'67p', name:'Comet 67P', icon:'☄️', category:'other', type:'comet',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: true,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: false, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: true, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: true, binary_system: false
+    },
+    fact: 'ESA\'s Rosetta mission orbited Comet 67P for 2 years, deploying the Philae lander — the first ever soft landing on a comet nucleus — in November 2014.'
+  },
+  { id:'halley', name:"Halley's Comet", icon:'💫', category:'other', type:'comet',
+    facts:{
+      orbits_sun: true, has_atmosphere: false, has_rings: false, larger_than_earth: false,
+      is_gas_giant: false, has_liquid_water: false, inner_solar_system: true,
+      has_moons: false, is_dwarf_planet: false, tidally_locked: false,
+      has_magnetic_field: false, retrograde_rotation: true, warmer_than_earth: false,
+      has_ice: true, visited_by_spacecraft: true, can_support_life: false,
+      has_volcanic_activity: false, is_moon: false, has_storms: false,
+      rotation_longer_than_year: false, rocky: true,
+      in_kuiper_belt: false, has_subsurface_ocean: false, smaller_than_moon: true,
+      been_landed_on: false, is_in_asteroid_belt: false, primarily_ice: false,
+      is_comet: true, binary_system: false
+    },
+    fact: 'Halley\'s Comet orbits the Sun every ~75–76 years and is the only short-period comet visible to the naked eye from Earth. It was last seen in 1986 and will return in 2061.'
+  },
+];
+
+const QUESTIONS = [
+  { id:'q_orbits_sun',     text:'Does it orbit the Sun directly?',                    key:'orbits_sun' },
+  { id:'q_is_moon',        text:'Is it a natural satellite (moon)?',                  key:'is_moon' },
+  { id:'q_is_dwarf',       text:'Is it classified as a dwarf planet?',                key:'is_dwarf_planet' },
+  { id:'q_is_comet',       text:'Is it classified as a comet?',                       key:'is_comet' },
+  { id:'q_is_gas',         text:'Is it a gas or ice giant?',                          key:'is_gas_giant' },
+  { id:'q_has_atmo',       text:'Does it have a substantial atmosphere?',             key:'has_atmosphere' },
+  { id:'q_has_rings',      text:'Does it have a ring system?',                        key:'has_rings' },
+  { id:'q_larger',         text:'Is it larger than Earth?',                           key:'larger_than_earth' },
+  { id:'q_smaller_moon',   text:'Is it smaller than Earth\'s Moon?',                  key:'smaller_than_moon' },
+  { id:'q_has_moons',      text:'Does it have known natural satellites?',             key:'has_moons' },
+  { id:'q_liquid_water',   text:'Is there evidence of liquid water (surface or sub)?',key:'has_liquid_water' },
+  { id:'q_subsurface',     text:'Does it have a confirmed/suspected subsurface ocean?',key:'has_subsurface_ocean' },
+  { id:'q_inner',          text:'Is it located in the inner solar system?',           key:'inner_solar_system' },
+  { id:'q_kuiper',         text:'Is it in the Kuiper Belt or Scattered Disc?',        key:'in_kuiper_belt' },
+  { id:'q_asteroid_belt',  text:'Is it located in the asteroid belt?',                key:'is_in_asteroid_belt' },
+  { id:'q_magnetic',       text:'Does it have a significant magnetic field?',         key:'has_magnetic_field' },
+  { id:'q_retrograde',     text:'Does it rotate or orbit in retrograde?',             key:'retrograde_rotation' },
+  { id:'q_ice',            text:'Does it have significant surface or subsurface ice?',key:'has_ice' },
+  { id:'q_primarily_ice',  text:'Is it composed primarily of ice?',                   key:'primarily_ice' },
+  { id:'q_spacecraft',     text:'Has it been visited by a spacecraft?',               key:'visited_by_spacecraft' },
+  { id:'q_landed',         text:'Has a spacecraft successfully landed on it?',        key:'been_landed_on' },
+  { id:'q_volcanic',       text:'Does it have volcanic or cryovolcanic activity?',    key:'has_volcanic_activity' },
+  { id:'q_rocky',          text:'Is it a rocky / solid-surface body?',                key:'rocky' },
+  { id:'q_tidal',          text:'Is it tidally locked to another body?',              key:'tidally_locked' },
+  { id:'q_storms',         text:'Does it host documented storm systems?',             key:'has_storms' },
+  { id:'q_binary',         text:'Is it part of a binary or co-orbital system?',       key:'binary_system' },
+];
+
+const MAX_QUESTIONS = 12;
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  STATE
+// ─────────────────────────────────────────────────────────────────────────────
+let state = {
+  selectedBodies: new Set(),
+  targetCount: 5,
+  target: null,
+  pool: [],
+  questionsLeft: MAX_QUESTIONS,
+  askedQuestions: new Set(),
+  qaLog: [],
+  gameOver: false,
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  STARFIELD
+// ─────────────────────────────────────────────────────────────────────────────
+(function initStarfield() {
+  const canvas = document.getElementById('starfield');
+  const ctx = canvas.getContext('2d');
+  let stars = [];
+  function resize() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    stars = [];
+    const count = Math.floor((canvas.width * canvas.height) / 4000);
+    for (let i = 0; i < count; i++) {
+      stars.push({
+        x: Math.random() * canvas.width,
+        y: Math.random() * canvas.height,
+        r: Math.random() * 1.4 + 0.2,
+        opacity: Math.random() * 0.7 + 0.15,
+        speed: Math.random() * 0.3 + 0.05,
+        phase: Math.random() * Math.PI * 2,
+      });
+    }
+  }
+  function draw(t) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    stars.forEach(s => {
+      const flicker = s.opacity * (0.75 + 0.25 * Math.sin(t * 0.001 * s.speed + s.phase));
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+      ctx.fillStyle = `rgba(200,220,255,${flicker})`;
+      ctx.fill();
+    });
+    requestAnimationFrame(draw);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+  requestAnimationFrame(draw);
+})();
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  SETUP
+// ─────────────────────────────────────────────────────────────────────────────
+function setCount(n) {
+  state.targetCount = n;
+  document.querySelectorAll('.count-pill').forEach(p => p.classList.remove('active'));
+  document.getElementById(`pill-${n}`).classList.add('active');
+  autoSelectBodies(n);
+}
+
+function autoSelectBodies(n) {
+  state.selectedBodies.clear();
+  const all = BODIES.map(b => b.id);
+  if (n === 'all') {
+    all.forEach(id => state.selectedBodies.add(id));
+  } else {
+    // Shuffle and pick n
+    const shuffled = [...all].sort(() => Math.random() - 0.5);
+    shuffled.slice(0, n).forEach(id => state.selectedBodies.add(id));
+  }
+  renderBodyChips();
+  updateSelectionCount();
+}
+
+function renderBodyChips() {
+  const cats = { planets: [], dwarfs: [], moons: [], other: [] };
+  BODIES.forEach(b => cats[b.category].push(b));
+
+  renderGrid('grid-planets', cats.planets);
+  renderGrid('grid-dwarfs', cats.dwarfs);
+  renderGrid('grid-moons', cats.moons);
+  renderGrid('grid-other', cats.other);
+}
+
+function renderGrid(gridId, bodies) {
+  const grid = document.getElementById(gridId);
+  grid.innerHTML = '';
+  bodies.forEach(b => {
+    const sel = state.selectedBodies.has(b.id);
+    const chip = document.createElement('button');
+    chip.className = 'body-chip' + (sel ? ' selected' : '');
+    chip.id = `chip-${b.id}`;
+    chip.innerHTML = `
+      <span class="body-icon">${b.icon}</span>
+      <span class="body-name">${b.name}</span>
+      <span class="check">✓</span>`;
+    chip.onclick = () => toggleBody(b.id);
+    grid.appendChild(chip);
+  });
+}
+
+function toggleBody(id) {
+  if (state.selectedBodies.has(id)) {
+    state.selectedBodies.delete(id);
+  } else {
+    state.selectedBodies.add(id);
+  }
+  const chip = document.getElementById(`chip-${id}`);
+  chip.classList.toggle('selected', state.selectedBodies.has(id));
+  updateSelectionCount();
+}
+
+function updateSelectionCount() {
+  const n = state.selectedBodies.size;
+  document.querySelector('#sel-count span').textContent = n;
+  document.getElementById('start-btn').disabled = n < 2;
+  document.getElementById('setup-warning').style.display = n < 2 ? 'inline' : 'none';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  GAME START
+// ─────────────────────────────────────────────────────────────────────────────
+function startGame() {
+  state.pool = BODIES.filter(b => state.selectedBodies.has(b.id));
+  state.target = state.pool[Math.floor(Math.random() * state.pool.length)];
+  state.questionsLeft = MAX_QUESTIONS;
+  state.askedQuestions = new Set();
+  state.qaLog = [];
+  state.gameOver = false;
+
+  document.getElementById('setup-screen').style.display = 'none';
+  document.getElementById('game-screen').style.display = 'block';
+  document.getElementById('result-panel-container').style.display = 'none';
+  document.getElementById('active-game').style.display = 'block';
+
+  renderCandidates();
+  renderBudgetBar();
+  renderQuestionsGrid();
+  renderGuessSelect();
+
+  const log = document.getElementById('qa-log');
+  log.innerHTML = '<div class="qa-empty" id="qa-empty">No transmissions yet. Ask your first question below.</div>';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  GAME RENDER
+// ─────────────────────────────────────────────────────────────────────────────
+function renderCandidates() {
+  const row = document.getElementById('candidates-row');
+  row.innerHTML = '';
+  state.pool.forEach(b => {
+    const badge = document.createElement('div');
+    badge.className = 'candidate-badge';
+    badge.id = `candidate-${b.id}`;
+    badge.textContent = `${b.icon} ${b.name}`;
+    row.appendChild(badge);
+  });
+}
+
+function renderBudgetBar() {
+  const bar = document.getElementById('budget-bar');
+  bar.innerHTML = '';
+  for (let i = 0; i < MAX_QUESTIONS; i++) {
+    const pip = document.createElement('div');
+    pip.className = 'budget-pip' + (i >= state.questionsLeft ? ' used' : '');
+    bar.appendChild(pip);
+  }
+  document.getElementById('budget-label').textContent = `${state.questionsLeft} remaining`;
+}
+
+function renderQuestionsGrid() {
+  const grid = document.getElementById('questions-grid');
+  grid.innerHTML = '';
+  QUESTIONS.forEach(q => {
+    const btn = document.createElement('button');
+    btn.className = 'q-btn' + (state.askedQuestions.has(q.id) ? ' asked' : '');
+    btn.id = `qbtn-${q.id}`;
+    btn.textContent = q.text;
+    btn.disabled = state.gameOver || state.questionsLeft === 0 || state.askedQuestions.has(q.id);
+    btn.onclick = () => askQuestion(q);
+    grid.appendChild(btn);
+  });
+}
+
+function renderGuessSelect() {
+  const sel = document.getElementById('guess-select');
+  sel.innerHTML = '<option value="">— Select celestial body —</option>';
+  state.pool.forEach(b => {
+    const opt = document.createElement('option');
+    opt.value = b.id;
+    opt.textContent = `${b.name} (${b.type})`;
+    sel.appendChild(opt);
+  });
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  QUESTION LOGIC
+// ─────────────────────────────────────────────────────────────────────────────
+function askQuestion(q) {
+  if (state.askedQuestions.has(q.id) || state.questionsLeft === 0 || state.gameOver) return;
+
+  state.askedQuestions.add(q.id);
+  state.questionsLeft--;
+
+  const answer = state.target.facts[q.key];
+  const answerText = answer === true ? 'Confirmed — Yes' : (answer === false ? 'Negative — No' : 'Inconclusive');
+  const answerClass = answer === true ? 'yes' : (answer === false ? 'no' : 'sometimes');
+
+  state.qaLog.push({ q: q.text, a: answerText, cls: answerClass, num: state.askedQuestions.size });
+
+  // Update log
+  const log = document.getElementById('qa-log');
+  const empty = document.getElementById('qa-empty');
+  if (empty) empty.remove();
+
+  const entry = document.createElement('div');
+  entry.className = 'qa-entry';
+  entry.innerHTML = `
+    <div class="qa-question">
+      <span class="qa-q-num">[${String(state.askedQuestions.size).padStart(2,'0')}]</span>
+      ${q.text}
+    </div>
+    <div class="qa-answer ${answerClass}">
+      ${answer ? '◉' : '○'} ${answerText}
+    </div>`;
+  log.appendChild(entry);
+  log.scrollTop = log.scrollHeight;
+
+  // Disable asked button
+  const btn = document.getElementById(`qbtn-${q.id}`);
+  if (btn) { btn.classList.add('asked'); btn.disabled = true; }
+
+  // Update budget
+  renderBudgetBar();
+
+  if (state.questionsLeft === 0) {
+    document.querySelectorAll('.q-btn').forEach(b => b.disabled = true);
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  GUESS LOGIC
+// ─────────────────────────────────────────────────────────────────────────────
+function submitGuess() {
+  const sel = document.getElementById('guess-select');
+  const guessId = sel.value;
+  if (!guessId) return;
+
+  state.gameOver = true;
+  const correct = guessId === state.target.id;
+  const guessedBody = BODIES.find(b => b.id === guessId);
+
+  // Hide active game
+  document.getElementById('active-game').style.display = 'none';
+
+  // Show result
+  const container = document.getElementById('result-panel-container');
+  container.style.display = 'block';
+  container.innerHTML = `
+    <div class="result-panel">
+      <div class="result-icon">${correct ? state.target.icon : '✗'}</div>
+      <div class="result-title ${correct ? 'correct' : 'wrong'}">
+        ${correct ? 'Identification Confirmed' : 'Identification Incorrect'}
+      </div>
+      <p class="result-body">
+        ${correct
+          ? `Your analysis was correct. The unknown object was ${state.target.name} — a ${state.target.type}. You used ${state.askedQuestions.size} of ${MAX_QUESTIONS} available transmissions.`
+          : `Your identification of <strong style="color:var(--danger)">${guessedBody.name}</strong> was incorrect. The object was in fact <strong style="color:var(--accent3)">${state.target.name}</strong>, a ${state.target.type}.`
+        }
+      </p>
+      <div class="result-reveal">${state.target.icon} ${state.target.name}</div>
+      <div class="result-fact">"${state.target.fact}"</div>
+      <div class="result-actions">
+        <button class="btn btn-primary" onclick="startGame()">New Target — Same Pool</button>
+        <button class="btn btn-secondary" onclick="resetToSetup()">Reconfigure Mission</button>
+      </div>
+    </div>`;
+
+  container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function resetToSetup() {
+  document.getElementById('setup-screen').style.display = 'block';
+  document.getElementById('game-screen').style.display = 'none';
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', () => {
+  renderBodyChips();
+  autoSelectBodies(5);
+});
+</script>
+</body>
+</html>
