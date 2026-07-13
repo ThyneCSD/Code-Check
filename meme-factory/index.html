@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Meme Factory ⚡ — Unlimited Cursed Content</title>
+  <meta name="description" content="AI-powered meme generator with dark mode, neon aesthetics, deep-fry filter, chaos mode, and instant PNG downloads. No backend needed." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- Background particles -->
+  <div class="bg-particles" id="bgParticles"></div>
+
+  <!-- Header -->
+  <header class="site-header">
+    <div class="logo-group">
+      <span class="logo-icon">⚡</span>
+      <h1 class="logo-text">AI <span class="neon">Meme</span> Factory</h1>
+    </div>
+    <div class="header-badges">
+      <span class="badge badge-chaos" id="chaosBadge">CHAOS OFF</span>
+      <span class="badge badge-version">v2.0</span>
+      <button class="btn-icon-only" id="btnSettings" title="API Settings">⚙️</button>
+    </div>
+  </header>
+
+  <!-- Main content -->
+  <main class="main">
+
+    <!-- Control Panel -->
+    <section class="control-panel" aria-label="Controls">
+      <button class="btn btn-primary" id="btnGenerate">
+        <span class="btn-icon">🎲</span>
+        Generate Meme
+      </button>
+      <button class="btn btn-secondary" id="btnAnother">
+        <span class="btn-icon">🔁</span>
+        Generate Another
+      </button>
+      <button class="btn btn-cursed" id="btnCursed">
+        <span class="btn-icon">💀</span>
+        Make It More Cursed
+      </button>
+      <button class="btn btn-deepfry" id="btnDeepFry">
+        <span class="btn-icon">🔥</span>
+        Deep Fry
+      </button>
+      <button class="btn btn-chaos" id="btnChaos">
+        <span class="btn-icon">🌀</span>
+        Random Chaos
+      </button>
+      <button class="btn btn-download" id="btnDownload">
+        <span class="btn-icon">⬇️</span>
+        Download PNG
+      </button>
+    </section>
+
+    <!-- Canvas display -->
+    <section class="canvas-wrapper" aria-label="Meme Display">
+      <div class="canvas-glow-ring" id="glowRing">
+        <div class="canvas-placeholder" id="placeholder">
+          <div class="placeholder-icon">🖼️</div>
+          <p class="placeholder-text">Click <strong>Generate Meme</strong> or <strong>Drag & Drop</strong> an image to create your first masterpiece</p>
+        </div>
+        <canvas id="memeCanvas" width="600" height="600" aria-label="Generated meme canvas"></canvas>
+      </div>
+
+      <!-- Status pill -->
+      <div class="status-pill" id="statusPill">Ready to create chaos</div>
+
+      <!-- Meme meta info -->
+      <div class="meme-meta" id="memeMeta"></div>
+    </section>
+
+    <!-- Options Row -->
+    <section class="options-row" aria-label="Options">
+      <label class="toggle-label">
+        <input type="checkbox" id="toggleChaos" class="toggle-input" />
+        <span class="toggle-track">
+          <span class="toggle-thumb"></span>
+        </span>
+        <span>Chaos Mode</span>
+      </label>
+      <label class="toggle-label">
+        <input type="checkbox" id="toggleAutoDeepFry" class="toggle-input" />
+        <span class="toggle-track">
+          <span class="toggle-thumb"></span>
+        </span>
+        <span>Auto Deep-Fry</span>
+      </label>
+    </section>
+
+    <!-- History Section -->
+    <section class="history-section" aria-label="Meme History">
+      <div class="history-header">
+        <h2 class="history-title">🗂 Recent Memes</h2>
+        <button class="btn-clear" id="btnClearHistory">Clear All</button>
+      </div>
+      <div class="history-grid" id="historyGrid">
+        <p class="history-empty">Your meme history will appear here...</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Settings Modal -->
+  <div class="modal-overlay" id="settingsModal">
+    <div class="modal-content">
+      <h3 class="modal-title">⚙️ AI Settings</h3>
+      <p class="modal-desc">To use the AI drag-and-drop feature, please provide a Google Gemini API Key. It will be saved securely in your browser's local storage.</p>
+      <input type="password" id="inputApiKey" class="modal-input" placeholder="AIzaSy..." />
+      <div class="modal-actions">
+        <button class="btn btn-clear" id="btnCancelSettings">Cancel</button>
+        <button class="btn btn-primary" id="btnSaveSettings">Save Key</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast"></div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
