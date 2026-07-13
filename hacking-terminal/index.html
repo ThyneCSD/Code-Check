@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HackSim — Learn Ethical Hacking</title>
+  <meta name="description" content="HackSim: An interactive terminal that teaches you the basics of ethical hacking through a simulated environment. Safe, educational, and fun." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Orbitron:wght@400;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Scanline overlay -->
+  <div class="scanlines"></div>
+  <!-- Animated grid background -->
+  <canvas id="bg-canvas"></canvas>
+
+  <div class="app-wrapper">
+    <!-- Header bar -->
+    <header class="topbar">
+      <div class="topbar-logo">
+        <span class="logo-bracket">[</span>
+        <span class="logo-text">HACK<span class="logo-accent">SIM</span></span>
+        <span class="logo-bracket">]</span>
+      </div>
+      <div class="topbar-info">
+        <span class="info-pill" id="status-indicator">● DISCONNECTED</span>
+        <span class="info-pill" id="ip-display">IP: 192.168.1.14</span>
+        <span class="info-pill" id="clock-display">00:00:00</span>
+      </div>
+    </header>
+
+    <div class="main-layout">
+      <!-- Left sidebar: lessons -->
+      <aside class="sidebar" id="sidebar">
+        <div class="sidebar-title">LESSONS</div>
+        <ul class="lesson-list" id="lesson-list">
+          <li class="lesson-item active" data-lesson="0" id="lesson-0">
+            <span class="lesson-icon">✦</span> Intro to Hacking
+          </li>
+          <li class="lesson-item locked" data-lesson="1" id="lesson-1">
+            <span class="lesson-icon">🔒</span> Network Recon
+          </li>
+          <li class="lesson-item locked" data-lesson="2" id="lesson-2">
+            <span class="lesson-icon">🔒</span> Port Scanning
+          </li>
+          <li class="lesson-item locked" data-lesson="3" id="lesson-3">
+            <span class="lesson-icon">🔒</span> Brute Force Basics
+          </li>
+          <li class="lesson-item locked" data-lesson="4" id="lesson-4">
+            <span class="lesson-icon">🔒</span> Privilege Escalation
+          </li>
+          <li class="lesson-item locked special" data-lesson="5" id="lesson-5">
+            <span class="lesson-icon">🔒</span> LIVE: Hack the Server
+          </li>
+        </ul>
+
+        <div class="sidebar-progress">
+          <div class="progress-label">PROGRESS</div>
+          <div class="progress-bar-wrap">
+            <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+          </div>
+          <div class="progress-pct" id="progress-pct">0%</div>
+        </div>
+      </aside>
+
+      <!-- Terminal -->
+      <main class="terminal-wrap">
+        <div class="terminal-titlebar">
+          <div class="dot red"></div>
+          <div class="dot yellow"></div>
+          <div class="dot green"></div>
+          <span class="terminal-title-text">root@hacksim:~$</span>
+          <span class="terminal-badge" id="terminal-badge">TUTORIAL MODE</span>
+        </div>
+        <div class="terminal-body" id="terminal-body">
+          <div class="terminal-output" id="terminal-output"></div>
+          <div class="terminal-input-row" id="input-row">
+            <span class="prompt" id="prompt-label">guest@hacksim:~$</span>
+            <input
+              type="text"
+              id="terminal-input"
+              class="terminal-input"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              spellcheck="false"
+              placeholder="type a command..."
+            />
+          </div>
+        </div>
+      </main>
+
+      <!-- Right panel: info -->
+      <aside class="info-panel" id="info-panel">
+        <div class="info-title">INTEL</div>
+        <div class="info-section" id="info-content">
+          <p class="info-hint">Complete lessons to reveal intel about the target system.</p>
+        </div>
+        <div class="hint-box" id="hint-box" style="display:none">
+          <div class="hint-label">💡 HINT</div>
+          <div class="hint-text" id="hint-text"></div>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Notification toast -->
+    <div class="toast" id="toast"></div>
+  </div>
+
+  <script src="terminal.js"></script>
+</body>
+</html>
